@@ -42,7 +42,6 @@ public class TransunionDataGeneratorApplication implements ApplicationRunner {
 	@Transactional
 	public void run(ApplicationArguments args) throws Exception {
 		List<String> arguments = args.getNonOptionArgs();
-		Faker faker = new Faker();
 
 		if (arguments.size() <= 0) {
 			printUsage();
@@ -60,38 +59,7 @@ public class TransunionDataGeneratorApplication implements ApplicationRunner {
 				numberOfRecords = NUMBER_OF_RECORDS;
 			}
 
-			// clean up
-			accountHistoryRepository.deleteAll();
-
-			// random numbers
-			Random pkRandom = new Random();
-			Random skRandom = new Random();
-			Random recordAcctIdRandom = new Random();
-			Random recordPartyIdRandom = new Random();
-
-			// insert test data
-			for (int i = 0; i < numberOfRecords; i++) {
-
-				AccountHistory accountHistory = new AccountHistory();
-
-				Record newRecord = new Record();
-				newRecord.setAcctId(recordAcctIdRandom.nextLong());
-				newRecord.setPartyId(recordPartyIdRandom.nextLong());
-
-				accountHistory.setPk(String.valueOf(pkRandom.nextLong()));
-				accountHistory.setEntityGroup("acct");
-				accountHistory.setEntity("hist_inctv");
-				accountHistory.setSk(String.valueOf(skRandom.nextLong()) + "#");
-				accountHistory.setRecord(newRecord);
-				accountHistory.setRecords(faker.chuckNorris().fact().getBytes());
-				accountHistory.setUpdVersionId(1L);
-				accountHistory.setUpdTsp(new Timestamp(System.currentTimeMillis()));
-				accountHistory.setUserSrcId("2BF1018002");
-				log.info(String.format("Inserting account history [%s]", accountHistory));
-				accountHistoryRepository.save(accountHistory);
-			}
-
-			log.info(String.format("Inserted %d records.", numberOfRecords));
+			insertRecords(numberOfRecords);
 
 		} else if ("update".equalsIgnoreCase(action)) {
 
@@ -103,33 +71,7 @@ public class TransunionDataGeneratorApplication implements ApplicationRunner {
 				numberOfUpdates = NUMBER_OF_UPDATES;
 			}
 
-			Long counter = 0L;
-			for (int i = 0; i < numberOfUpdates; i++) {
-
-				// paging
-				long numberOfPages = accountHistoryRepository.count() / PAGE_SIZE;
-				for (int page = 0; page < numberOfPages; page++) {
-
-					// get existing records
-					PageRequest pageRequest = PageRequest.of(page, PAGE_SIZE);
-					Page<AccountHistory> allHistories = accountHistoryRepository.findAll(pageRequest);
-
-					// update records
-					for (AccountHistory history : allHistories) {
-
-						String oldAccountHistory = history.toString();
-						history.setRecords(faker.harryPotter().quote().getBytes());
-						history.setUpdTsp(new Timestamp(System.currentTimeMillis()));
-						String newAccountHistory = history.toString();
-						log.info(String.format("Updating account history [%s] to [%s]", oldAccountHistory,
-								newAccountHistory));
-						accountHistoryRepository.save(history);
-						counter++;
-					}
-				}
-
-				log.info(String.format("Updated %d records", counter));
-			}
+			updateRecords(numberOfUpdates);
 
 		} else {
 			printUsage();
@@ -145,4 +87,77 @@ public class TransunionDataGeneratorApplication implements ApplicationRunner {
 		System.out.println("**************************");
 	}
 
+	@Transactional
+	private void insertRecords(Long numberOfRecords) {
+
+		Faker faker = new Faker();
+
+		// clean up
+		accountHistoryRepository.deleteAll();
+
+		// random numbers
+		Random pkRandom = new Random();
+		Random skRandom = new Random();
+		Random recordAcctIdRandom = new Random();
+		Random recordPartyIdRandom = new Random();
+
+		// insert test data
+		for (int i = 0; i < numberOfRecords; i++) {
+
+			AccountHistory accountHistory = new AccountHistory();
+
+			Record newRecord = new Record();
+			newRecord.setAcctId(recordAcctIdRandom.nextLong());
+			newRecord.setPartyId(recordPartyIdRandom.nextLong());
+
+			accountHistory.setPk(String.valueOf(pkRandom.nextLong()));
+			accountHistory.setEntityGroup("acct");
+			accountHistory.setEntity("hist_inctv");
+			accountHistory.setSk(String.valueOf(skRandom.nextLong()) + "#");
+			accountHistory.setRecord(newRecord);
+			accountHistory.setRecords(faker.chuckNorris().fact().getBytes());
+			accountHistory.setUpdVersionId(1L);
+			accountHistory.setUpdTsp(new Timestamp(System.currentTimeMillis()));
+			accountHistory.setUserSrcId("2BF1018002");
+			log.info(String.format("Inserting account history [%s]", accountHistory));
+			accountHistoryRepository.save(accountHistory);
+		}
+
+		log.info(String.format("Inserted %d records.", numberOfRecords));
+
+	}
+
+	@Transactional
+	private void updateRecords(Long numberOfUpdates) {
+
+		Faker faker = new Faker();
+		Long counter = 0L;
+		for (int i = 0; i < numberOfUpdates; i++) {
+
+			// paging
+			long numberOfPages = (accountHistoryRepository.count() / PAGE_SIZE) + 1;
+			for (int page = 0; page < numberOfPages; page++) {
+
+				// get existing records
+				PageRequest pageRequest = PageRequest.of(page, PAGE_SIZE);
+				Page<AccountHistory> allHistories = accountHistoryRepository.findAll(pageRequest);
+
+				// update records
+				for (AccountHistory history : allHistories) {
+
+					String oldAccountHistory = history.toString();
+					history.setRecords(faker.harryPotter().quote().getBytes());
+					history.setUpdTsp(new Timestamp(System.currentTimeMillis()));
+					String newAccountHistory = history.toString();
+					log.info(String.format("Updating account history [%s] to [%s]", oldAccountHistory,
+							newAccountHistory));
+					accountHistoryRepository.save(history);
+					counter++;
+				}
+			}
+
+			log.info(String.format("Updated %d records", counter));
+		}
+
+	}
 }
