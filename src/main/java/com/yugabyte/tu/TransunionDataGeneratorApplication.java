@@ -3,7 +3,6 @@ package com.yugabyte.tu;
 import java.security.SecureRandom;
 import java.sql.Timestamp;
 import java.util.List;
-import java.util.Random;
 
 import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,10 +12,11 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.github.javafaker.Faker;
 
-import jakarta.transaction.Transactional;
 import lombok.extern.apachecommons.CommonsLog;
 
 @SpringBootApplication
@@ -33,7 +33,7 @@ public class TransunionDataGeneratorApplication implements ApplicationRunner {
 	private static final Long NUMBER_OF_UPDATES = 1L;
 
 	// page size
-	private static final Integer PAGE_SIZE = 100000;
+	private static final Integer PAGE_SIZE = 100;
 
 	public static void main(String[] args) {
 		SpringApplication.run(TransunionDataGeneratorApplication.class, args);
@@ -131,11 +131,7 @@ public class TransunionDataGeneratorApplication implements ApplicationRunner {
 	@Transactional
 	private void updateRecords(Long numberOfUpdates) {
 
-		Faker faker = new Faker();
-		SecureRandom recordAcctIdRandom = new SecureRandom();
-		SecureRandom recordPartyIdRandom = new SecureRandom();
-
-		Long counter = 0L;
+		Long count = 0L;
 		for (int i = 0; i < numberOfUpdates; i++) {
 
 			// paging
@@ -145,28 +141,40 @@ public class TransunionDataGeneratorApplication implements ApplicationRunner {
 				// get existing records
 				PageRequest pageRequest = PageRequest.of(page, PAGE_SIZE);
 				Page<AccountHistory> allHistories = accountHistoryRepository.findAll(pageRequest);
+				count += batchTransactionUpdate(allHistories);
 
-				// update records
-				for (AccountHistory history : allHistories) {
-
-					Record newRecord = new Record();
-					newRecord.setAcctId(Math.abs(recordAcctIdRandom.nextLong()));
-					newRecord.setPartyId(Math.abs(recordPartyIdRandom.nextLong()));
-
-					String oldAccountHistory = history.toString();
-					history.setRecord(newRecord);
-					history.setRecords(faker.harryPotter().quote().getBytes());
-					history.setUpdTsp(new Timestamp(System.currentTimeMillis()));
-					String newAccountHistory = history.toString();
-					log.info(String.format("Updating account history [%s] to [%s]", oldAccountHistory,
-							newAccountHistory));
-					accountHistoryRepository.save(history);
-					counter++;
-				}
 			}
 
-			log.info(String.format("Updated %d records", counter));
+			log.info(String.format("Updated %d records", count));
 		}
 
+	}
+
+	@Transactional(propagation = Propagation.REQUIRES_NEW)
+	private Long batchTransactionUpdate(Page<AccountHistory> allHistories) {
+
+		Long counter = 0L;
+		Faker faker = new Faker();
+		SecureRandom recordAcctIdRandom = new SecureRandom();
+		SecureRandom recordPartyIdRandom = new SecureRandom();
+		// update records
+		for (AccountHistory history : allHistories) {
+
+			Record newRecord = new Record();
+			newRecord.setAcctId(Math.abs(recordAcctIdRandom.nextLong()));
+			newRecord.setPartyId(Math.abs(recordPartyIdRandom.nextLong()));
+
+			String oldAccountHistory = history.toString();
+			history.setRecord(newRecord);
+			history.setRecords(faker.harryPotter().quote().getBytes());
+			history.setUpdTsp(new Timestamp(System.currentTimeMillis()));
+			String newAccountHistory = history.toString();
+			log.info(String.format("Updating account history [%s] to [%s]", oldAccountHistory,
+					newAccountHistory));
+			accountHistoryRepository.save(history);
+			counter++;
+		}
+
+		return counter;
 	}
 }
