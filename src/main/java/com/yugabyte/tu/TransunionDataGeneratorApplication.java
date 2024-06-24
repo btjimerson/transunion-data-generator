@@ -13,6 +13,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 import com.github.javafaker.Faker;
 
+import jakarta.transaction.Transactional;
 import lombok.extern.apachecommons.CommonsLog;
 
 @SpringBootApplication
@@ -33,6 +34,7 @@ public class TransunionDataGeneratorApplication implements ApplicationRunner {
 	}
 
 	@Override
+	@Transactional
 	public void run(ApplicationArguments args) throws Exception {
 		List<String> arguments = args.getNonOptionArgs();
 		Faker faker = new Faker();
