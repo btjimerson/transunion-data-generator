@@ -128,7 +128,7 @@ public class TransunionDataGeneratorApplication implements ApplicationRunner {
 
 	}
 
-	@Transactional
+	// @Transactional
 	private void updateRecords(Long numberOfUpdates) {
 
 		Long count = 0L;
@@ -150,7 +150,7 @@ public class TransunionDataGeneratorApplication implements ApplicationRunner {
 
 	}
 
-	@Transactional(propagation = Propagation.REQUIRES_NEW)
+	@Transactional
 	private Long batchTransactionUpdate(Page<AccountHistory> allHistories) {
 
 		Long counter = 0L;
