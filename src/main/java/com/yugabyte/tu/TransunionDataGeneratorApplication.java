@@ -1,5 +1,6 @@
 package com.yugabyte.tu;
 
+import java.security.SecureRandom;
 import java.sql.Timestamp;
 import java.util.List;
 import java.util.Random;
@@ -96,10 +97,10 @@ public class TransunionDataGeneratorApplication implements ApplicationRunner {
 		accountHistoryRepository.deleteAll();
 
 		// random numbers
-		Random pkRandom = new Random();
-		Random skRandom = new Random();
-		Random recordAcctIdRandom = new Random();
-		Random recordPartyIdRandom = new Random();
+		SecureRandom pkRandom = new SecureRandom();
+		SecureRandom skRandom = new SecureRandom();
+		SecureRandom recordAcctIdRandom = new SecureRandom();
+		SecureRandom recordPartyIdRandom = new SecureRandom();
 
 		// insert test data
 		for (int i = 0; i < numberOfRecords; i++) {
@@ -107,13 +108,13 @@ public class TransunionDataGeneratorApplication implements ApplicationRunner {
 			AccountHistory accountHistory = new AccountHistory();
 
 			Record newRecord = new Record();
-			newRecord.setAcctId(recordAcctIdRandom.nextLong());
-			newRecord.setPartyId(recordPartyIdRandom.nextLong());
+			newRecord.setAcctId(Math.abs(recordAcctIdRandom.nextLong()));
+			newRecord.setPartyId(Math.abs(recordPartyIdRandom.nextLong()));
 
-			accountHistory.setPk(String.valueOf(pkRandom.nextLong()));
+			accountHistory.setPk(String.valueOf(Math.abs(pkRandom.nextLong())));
 			accountHistory.setEntityGroup("acct");
 			accountHistory.setEntity("hist_inctv");
-			accountHistory.setSk(String.valueOf(skRandom.nextLong()) + "#");
+			accountHistory.setSk(String.valueOf(Math.abs(skRandom.nextLong())) + "#");
 			accountHistory.setRecord(newRecord);
 			accountHistory.setRecords(faker.chuckNorris().fact().getBytes());
 			accountHistory.setUpdVersionId(1L);
@@ -131,6 +132,9 @@ public class TransunionDataGeneratorApplication implements ApplicationRunner {
 	private void updateRecords(Long numberOfUpdates) {
 
 		Faker faker = new Faker();
+		SecureRandom recordAcctIdRandom = new SecureRandom();
+		SecureRandom recordPartyIdRandom = new SecureRandom();
+
 		Long counter = 0L;
 		for (int i = 0; i < numberOfUpdates; i++) {
 
@@ -145,7 +149,12 @@ public class TransunionDataGeneratorApplication implements ApplicationRunner {
 				// update records
 				for (AccountHistory history : allHistories) {
 
+					Record newRecord = new Record();
+					newRecord.setAcctId(Math.abs(recordAcctIdRandom.nextLong()));
+					newRecord.setPartyId(Math.abs(recordPartyIdRandom.nextLong()));
+
 					String oldAccountHistory = history.toString();
+					history.setRecord(newRecord);
 					history.setRecords(faker.harryPotter().quote().getBytes());
 					history.setUpdTsp(new Timestamp(System.currentTimeMillis()));
 					String newAccountHistory = history.toString();
