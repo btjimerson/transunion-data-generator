@@ -10,6 +10,8 @@ import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 
 import com.github.javafaker.Faker;
 
@@ -28,6 +30,9 @@ public class TransunionDataGeneratorApplication implements ApplicationRunner {
 
 	// how many times to update all of the records
 	private static final Long NUMBER_OF_UPDATES = 1L;
+
+	// page size
+	private static final Integer PAGE_SIZE = 100000;
 
 	public static void main(String[] args) {
 		SpringApplication.run(TransunionDataGeneratorApplication.class, args);
@@ -100,24 +105,31 @@ public class TransunionDataGeneratorApplication implements ApplicationRunner {
 
 			Long counter = 0L;
 			for (int i = 0; i < numberOfUpdates; i++) {
-				// get existing records
-				List<AccountHistory> allHistories = accountHistoryRepository.findAll();
 
-				// update records
-				for (AccountHistory history : allHistories) {
+				// paging
+				long numberOfPages = accountHistoryRepository.count() / PAGE_SIZE;
+				for (int page = 0; page < numberOfPages; page++) {
 
-					String oldAccountHistory = history.toString();
-					history.setRecords(faker.harryPotter().quote().getBytes());
-					history.setUpdTsp(new Timestamp(System.currentTimeMillis()));
-					String newAccountHistory = history.toString();
-					log.info(String.format("Updating account history [%s] to [%s]", oldAccountHistory,
-							newAccountHistory));
-					accountHistoryRepository.save(history);
-					counter++;
+					// get existing records
+					PageRequest pageRequest = PageRequest.of(page, PAGE_SIZE);
+					Page<AccountHistory> allHistories = accountHistoryRepository.findAll(pageRequest);
+
+					// update records
+					for (AccountHistory history : allHistories) {
+
+						String oldAccountHistory = history.toString();
+						history.setRecords(faker.harryPotter().quote().getBytes());
+						history.setUpdTsp(new Timestamp(System.currentTimeMillis()));
+						String newAccountHistory = history.toString();
+						log.info(String.format("Updating account history [%s] to [%s]", oldAccountHistory,
+								newAccountHistory));
+						accountHistoryRepository.save(history);
+						counter++;
+					}
 				}
-			}
 
-			log.info(String.format("Updated %d records", counter));
+				log.info(String.format("Updated %d records", counter));
+			}
 
 		} else {
 			printUsage();
