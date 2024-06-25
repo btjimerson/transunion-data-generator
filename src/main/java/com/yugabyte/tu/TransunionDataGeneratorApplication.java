@@ -12,7 +12,6 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.github.javafaker.Faker;
@@ -40,7 +39,6 @@ public class TransunionDataGeneratorApplication implements ApplicationRunner {
 	}
 
 	@Override
-	@Transactional
 	public void run(ApplicationArguments args) throws Exception {
 		List<String> arguments = args.getNonOptionArgs();
 
@@ -128,7 +126,6 @@ public class TransunionDataGeneratorApplication implements ApplicationRunner {
 
 	}
 
-	// @Transactional
 	private void updateRecords(Long numberOfUpdates) {
 
 		Long count = 0L;
