@@ -62,15 +62,7 @@ public class TransunionDataGeneratorApplication implements ApplicationRunner {
 
 		} else if ("update".equalsIgnoreCase(action)) {
 
-			// number of times to update all records
-			Long numberOfUpdates;
-			if (arguments.size() > 1 && NumberUtils.isCreatable(arguments.get(1))) {
-				numberOfUpdates = Long.valueOf(arguments.get(1));
-			} else {
-				numberOfUpdates = NUMBER_OF_UPDATES;
-			}
-
-			updateRecords(numberOfUpdates);
+			updateRecords();
 
 		} else {
 			printUsage();
@@ -81,7 +73,7 @@ public class TransunionDataGeneratorApplication implements ApplicationRunner {
 	private void printUsage() {
 		System.out.println("**************************");
 		System.out.println(
-				"Usage: java -jar  transunion-data-generator*.jar <insert | update> <number of records | number of updates>");
+				"Usage: java -jar  transunion-data-generator*.jar <insert | update> <number of records>");
 		System.out.println("Example: java -jar transunion-data-generator*.jar insert 5000000");
 		System.out.println("**************************");
 	}
@@ -118,7 +110,7 @@ public class TransunionDataGeneratorApplication implements ApplicationRunner {
 			accountHistory.setUpdVersionId(1L);
 			accountHistory.setUpdTsp(new Timestamp(System.currentTimeMillis()));
 			accountHistory.setUserSrcId("2BF1018002");
-			log.info(String.format("Inserting account history [%s]", accountHistory));
+			log.debug(String.format("Inserting account history [%s]", accountHistory));
 			accountHistoryRepository.save(accountHistory);
 		}
 
@@ -126,24 +118,22 @@ public class TransunionDataGeneratorApplication implements ApplicationRunner {
 
 	}
 
-	private void updateRecords(Long numberOfUpdates) {
+	private void updateRecords() {
 
 		Long count = 0L;
-		for (int i = 0; i < numberOfUpdates; i++) {
 
-			// paging
-			long numberOfPages = (accountHistoryRepository.count() / PAGE_SIZE) + 1;
-			for (int page = 0; page < numberOfPages; page++) {
+		// paging
+		long numberOfPages = (accountHistoryRepository.count() / PAGE_SIZE) + 1;
+		for (int page = 0; page < numberOfPages; page++) {
 
-				// get existing records
-				PageRequest pageRequest = PageRequest.of(page, PAGE_SIZE);
-				Page<AccountHistory> allHistories = accountHistoryRepository.findAll(pageRequest);
-				count += batchTransactionUpdate(allHistories);
+			// get existing records
+			PageRequest pageRequest = PageRequest.of(page, PAGE_SIZE);
+			Page<AccountHistory> allHistories = accountHistoryRepository.findAll(pageRequest);
+			count += batchTransactionUpdate(allHistories);
 
-			}
-
-			log.info(String.format("Updated %d records", count));
 		}
+
+		log.info(String.format("Updated %d records", count));
 
 	}
 
@@ -166,7 +156,7 @@ public class TransunionDataGeneratorApplication implements ApplicationRunner {
 			history.setRecords(faker.harryPotter().quote().getBytes());
 			history.setUpdTsp(new Timestamp(System.currentTimeMillis()));
 			String newAccountHistory = history.toString();
-			log.info(String.format("Updating account history [%s] to [%s]", oldAccountHistory,
+			log.debug(String.format("Updating account history [%s] to [%s]", oldAccountHistory,
 					newAccountHistory));
 			accountHistoryRepository.save(history);
 			counter++;

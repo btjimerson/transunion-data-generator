@@ -29,6 +29,6 @@ To update data:
 
 ```
 cd target
-java -jar transunion-data-generator*.jar update 5
+java -jar transunion-data-generator*.jar update
 ```
-Which will update all of the existing records 5 times.
+Which will continue to update all of the records until the application is stopped.
