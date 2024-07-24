@@ -122,18 +122,20 @@ public class TransunionDataGeneratorApplication implements ApplicationRunner {
 
 		Long count = 0L;
 
-		// paging
-		long numberOfPages = (accountHistoryRepository.count() / PAGE_SIZE) + 1;
-		for (int page = 0; page < numberOfPages; page++) {
+		while (true) {
+			// paging
+			long numberOfPages = (accountHistoryRepository.count() / PAGE_SIZE) + 1;
+			for (int page = 0; page < numberOfPages; page++) {
 
-			// get existing records
-			PageRequest pageRequest = PageRequest.of(page, PAGE_SIZE);
-			Page<AccountHistory> allHistories = accountHistoryRepository.findAll(pageRequest);
-			count += batchTransactionUpdate(allHistories);
+				// get existing records
+				PageRequest pageRequest = PageRequest.of(page, PAGE_SIZE);
+				Page<AccountHistory> allHistories = accountHistoryRepository.findAll(pageRequest);
+				count += batchTransactionUpdate(allHistories);
 
+			}
+
+			log.info(String.format("Updated %d records", count));
 		}
-
-		log.info(String.format("Updated %d records", count));
 
 	}
 
